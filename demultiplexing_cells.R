@@ -143,7 +143,10 @@ for(my_sample in samples){
 
   # Parameters
   params <- paste0(
-    "--sample=", paste0(my_sample, collapse = ","),
+    config_file$cellranger,
+    " ", routine,
+    " --id=", my_sample,
+    " --sample=", paste0(my_sample, collapse = ","),
     " --project=", project_name,
     " --fastqs=", fastqs,
     " --libraries=", libraries_file,
@@ -160,11 +163,9 @@ for(my_sample in samples){
   output_dir <- paste0(getwd(), "/", routine)
   if(!dir.exists(output_dir)) dir.create(output_dir)
 
-  pbs <- gsub("\\{cellranger\\}", config_file$cellranger, template_pbs)
   pbs <- gsub("\\{username\\}", username, pbs)
   pbs <- gsub("\\{sampleid\\}", my_sample, pbs)
   pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
-  pbs <- gsub("\\{routine\\}", routine, pbs)
   pbs <- gsub("\\{outpath\\}", output_dir, pbs)
   pbs <- gsub("\\{routine_params\\}", params, pbs)
   for(i in names(config_file$job)){

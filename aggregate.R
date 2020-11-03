@@ -102,7 +102,10 @@ for(my_aggregation in aggregations){
 
   # Parameters
   params <- paste0(
-    "--csv=", libraries_file,
+    config_file$cellranger,
+    " ", routine,
+    " --id=", my_sample,
+    " --csv=", libraries_file,
     " --normalize=mapped",
     " --localcores=", config_file$job$ppn[[routine_pbs_fname]],
     " --localmem=", gsub("gb", "", config_file$job$mem[[routine_pbs_fname]], ignore.case = TRUE),
@@ -113,11 +116,9 @@ for(my_aggregation in aggregations){
   output_dir <- paste0(getwd(), "/", routine)
   if(!dir.exists(output_dir)) dir.create(output_dir)
 
-  pbs <- gsub("\\{cellranger\\}", config_file$cellranger, template_pbs)
   pbs <- gsub("\\{username\\}", username, pbs)
   pbs <- gsub("\\{sampleid\\}", aggregation_name, pbs)
   pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
-  pbs <- gsub("\\{routine\\}", routine, pbs)
   pbs <- gsub("\\{outpath\\}", output_dir, pbs)
   pbs <- gsub("\\{routine_params\\}", params, pbs)
   for(i in names(config_file$job)){
