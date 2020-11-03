@@ -27,8 +27,12 @@ cd cellrangeR_wrapper
 
 Make sure your config template is pointing to where you have the pipeline.
 This will also add the run.sh script as an alias.
-`sh locate_pipeline.sh`
+```
+sh locate_pipeline.sh
+```
 
 ### Run the pipeline
 After you've added the necessary information to the YAML file you can call the pipeline
-`cellranger_wrappeR -y /path/to/project/config.yaml`
+````
+cellranger_wrappeR -y /path/to/project/config.yaml
+```
