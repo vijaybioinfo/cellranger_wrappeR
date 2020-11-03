@@ -36,7 +36,9 @@ PIPELINE_DIR=${PIPELINE_DIR%/}
 echo "Pipeline: ${PIPELINE_DIR}"
 
 Rscript ${PIPELINE_DIR}/demultiplexing_cells.R -y ${CONFIG_FILE} -v ${VERBOSE}
-Rscript ${PIPELINE_DIR}/aggregate.R -y ${CONFIG_FILE} -v ${VERBOSE}
+if grep -q "aggregation:" ${CONFIG_FILE}; then
+  Rscript ${PIPELINE_DIR}/aggregate.R -y ${CONFIG_FILE} -v ${VERBOSE}
+fi
 
 echo "Check outputs at: `grep "output_dir" ${CONFIG_FILE} | sed 's/.*: //; s/ #.*//'`"
 
