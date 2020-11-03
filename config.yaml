@@ -1,0 +1,29 @@
+---
+project: "fungal_allergy"
+run: "/mnt/NovaSeq/201016_A00475_0254_BH7VYFDSXY_NV035"
+# folder with fastq files output from mkfastq or bcl2fastq
+fastqs_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV035"
+output_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/raw/NV035" # created if it doesn't exists
+# sample sheet or a pattern to select samples from 'fastqs_dir'
+samples: "FgAl06"
+transcriptome: # Cell Ranger reference
+  count: "/mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0"
+  vdj: /mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-vdj-GRCh38-alts-ensembl-2.0.0
+# You can give a sheet per sample or add a column 'library_pattern' with patterns
+# that can be found in the libraries that contain the set of barcodes
+feature_ref:
+  main: "./data/fbarcodes.csv"
+  sample_name1: "./data/fbarcodes_sample_name1.csv"
+# Metadata with additional columns prefixed like aggr.NAME_OF_AGGR and values equal to 1
+aggregation: "./data/metadata_library.csv"
+job: # PBS settings
+  template: "./routine_template.sh"
+  walltime: {count: 50:00:00, vdj: 40:00:00, fbarcode: 24:00:00, aggr: 24:00:00}
+  mem: {count: 70gb, vdj: 40gb, fbarcode: 32gb, aggr: 30gb}
+  ppn: {count: 10, vdj: 4, fbarcode: 4, aggr: 6}
+  nodes: 1
+  depend: none # job id the sample will run acter it sucessfully finishes
+  submit: no
+cellranger: "/home/ciro/bin/cellranger-3.1.0/cellranger"
+pipeline: "./"
+...
