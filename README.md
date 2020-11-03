@@ -33,6 +33,6 @@ sh locate_pipeline.sh
 
 ### Run the pipeline
 After you've added the necessary information to the YAML file you can call the pipeline
-````
+```
 cellranger_wrappeR -y /path/to/project/config.yaml
 ```
