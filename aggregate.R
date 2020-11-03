@@ -116,7 +116,7 @@ for(my_aggregation in aggregations){
   output_dir <- paste0(getwd(), "/", routine)
   if(!dir.exists(output_dir)) dir.create(output_dir)
 
-  pbs <- gsub("\\{username\\}", username, pbs)
+  pbs <- gsub("\\{username\\}", username, template_pbs)
   pbs <- gsub("\\{sampleid\\}", aggregation_name, pbs)
   pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
   pbs <- gsub("\\{outpath\\}", output_dir, pbs)
