@@ -104,7 +104,7 @@ for(my_aggregation in aggregations){
   params <- paste0(
     config_file$cellranger,
     " ", routine,
-    " --id=", my_sample,
+    " --id=", aggregation_name,
     " --csv=", libraries_file,
     " --normalize=mapped",
     " --localcores=", config_file$job$ppn[[routine_pbs_fname]],
