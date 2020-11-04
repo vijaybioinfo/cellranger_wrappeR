@@ -10,7 +10,7 @@ transcriptome: # Cell Ranger reference
   count: "/mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0"
   vdj: /mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-vdj-GRCh38-alts-ensembl-2.0.0
 # You can give a sheet per sample or add a column 'library_pattern' with patterns
-# that can be found in the libraries that contain the set of barcodes
+# that can be found in the libraries' names where you used the set of barcodes
 feature_ref:
   main: "./data/fbarcodes.csv"
   sample_name1: "./data/fbarcodes_sample_name1.csv"
@@ -22,7 +22,7 @@ job: # PBS settings
   mem: {count: 70gb, vdj: 40gb, fbarcode: 32gb, aggr: 30gb}
   ppn: {count: 10, vdj: 4, fbarcode: 4, aggr: 6}
   nodes: 1
-  depend: none # job id the sample will run acter it sucessfully finishes
+  depend: none # job id; jobs will run acter this dependency sucessfully finishes
   submit: no
 cellranger: "/home/ciro/bin/cellranger-3.1.0/cellranger"
 pipeline: "./"
