@@ -26,7 +26,7 @@ Also, _once you bcl2fastq you never mkfastq again_.
 Clone this repository.
 ```
 git clone https://github.com/vijaybioinfo/cellranger_wrappeR.git
-cd cellrangeR_wrapper
+cd cellranger_wrappeR
 ```
 
 Make sure your config template is pointing to where you have the pipeline.
