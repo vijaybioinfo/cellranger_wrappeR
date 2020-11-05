@@ -4,8 +4,7 @@ run: "/mnt/NovaSeq/201016_A00475_0254_BH7VYFDSXY_NV035"
 # folder with fastq files output from mkfastq or bcl2fastq; separate by commas if more than one
 fastqs_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV035"
 output_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/raw/NV035" # created if it doesn't exists
-# sample sheet or a pattern to select samples from 'fastqs_dir'
-samples: "FgAl06"
+samples: "FgAl06" # sample sheet or a pattern to select samples from 'fastqs_dir'
 transcriptome: # Cell Ranger reference
   count: "/mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0"
   vdj: /mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-vdj-GRCh38-alts-ensembl-2.0.0
