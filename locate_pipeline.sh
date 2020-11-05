@@ -16,3 +16,4 @@ if ! grep -q "bash_alias" ~/.bash*; then
   echo "Adding alias sourcing to ~/.bashrc"
   echo "source ~/.bash_alias" >> ~/.bashrc
 fi
+source ~/.bash_alias
