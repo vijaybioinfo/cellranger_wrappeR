@@ -1,7 +1,5 @@
 #!/bin/R
 
-# Example: /home/ciro/scripts/cellranger/config_project.yaml
-
 library(optparse)
 library(yaml)
 
@@ -77,10 +75,11 @@ sample_patterns <- if(file.exists(config_file$samples)){
 }
 
 # Setting FASTQ directory
-if(is.null(config_file$fastqs_dir)) config_file$fastqs_dir <- "./"
+fastqs_dir <- if(!is.null(config_file$fastqs_dir)) config_file$fastqs_dir else "./"
+fastqs_dir <- gsub(",", " ", fastqs_dir)
 
 # Getting samples
-command <- paste("find", config_file$fastqs_dir, "-maxdepth 3 -name *fastq*")
+command <- paste("find", fastqs_dir, "-maxdepth 3 -name *fastq*")
 if(defargs$verbose) cat(command, "\n")
 all_samples <- system(command, intern = TRUE)
 all_samples <- all_samples[!grepl("Undetermined_", all_samples)]
@@ -100,10 +99,10 @@ for(my_sample in samples){
 
   # Getting fastqs location and name(s)
   selected_samples <- grep(my_sample, all_samples, value = TRUE)
-  fastqs <- unique(dirnamen(selected_samples, 2)) # count it be just config_file$fastqs_dir?
+  fastqs <- unique(dirnamen(selected_samples, 2)) # can it be just config_file$fastqs_dir?
   project_name <- unique(basename(dirnamen(selected_samples, 2)))
-  if(project_name == basename(config_file$fastqs_dir)) project_name <- unique(basename(dirname(selected_samples)))
-  sample_name <- unique(basename(dirname(selected_samples)))
+  if(project_name %in% basename(fastqs_dir)) project_name <- unique(basename(dirname(selected_samples)))
+  sample_path <- unique(dirname(selected_samples))
 
   # Determining routine type
   routine <- routine_pbs_fname <- "count"
@@ -122,7 +121,7 @@ for(my_sample in samples){
 
     libraries_df <- c(
       "fastqs,sample,library_type",
-      paste0(fastqs, "/", sample_name, ",", my_sample, ",Antibody Capture")
+      paste0(sample_path, ",", my_sample, ",Antibody Capture")
     )
     write.table(libraries_df, col.names = FALSE, file = libraries_file, quote = FALSE, row.names = FALSE, sep = ",")
 
@@ -148,7 +147,7 @@ for(my_sample in samples){
     " --id=", my_sample,
     " --sample=", paste0(my_sample, collapse = ","),
     " --project=", project_name,
-    " --fastqs=", fastqs,
+    " --fastqs=", paste0(fastqs, collapse = ","),
     " --libraries=", libraries_file,
     " --feature-ref=", feature_ref,
     " --nosecondary",
@@ -186,7 +185,7 @@ for(my_sample in samples){
     depend <- if(isTRUE(config_file$job$depend %in% running$id)) paste0("-W depend=afterok:", config_file$job$depend)
     pbs_command <- paste("qsub", depend, pbs_file)
     if(defargs$verbose) cat("\n", pbs_command); system(pbs_command)
-    try(system(paste("rm ", gsub("sh", "*txt", pbs_file))), silent = TRUE)
+    try(file.remove(gsub("sh", "out.txt", pbs_file)), silent = TRUE)
   }
   if(defargs$verbose) cat("\n")
 }

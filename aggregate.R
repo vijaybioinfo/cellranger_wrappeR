@@ -141,7 +141,7 @@ for(my_aggregation in aggregations){
     if(is.null(depend) && depend_routine != "") depend_routine <- paste0("-W depend=afterok:", depend_routine)
     pbs_command <- paste("qsub", depend_routine, pbs_file)
     if(defargs$verbose) cat("\n", pbs_command); system(pbs_command)
-    try(system(paste("rm ", gsub("sh", "*txt", pbs_file))), silent = TRUE)
+    try(file.remove(gsub("sh", "out.txt", pbs_file)), silent = TRUE)
   }
   if(defargs$verbose) cat("\n")
 }
