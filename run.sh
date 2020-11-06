@@ -24,14 +24,13 @@ while getopts ":y:vh" opt; do
   esac
 done
 if [[ ${OPTIND} -eq 1 ]] ; then
-    usage
-    exit 1
+    usage; exit 1
 fi
 
-if grep -q 'pipeline:' ${CONFIG_FILE}; then
-  PIPELINE_DIR=`grep 'pipeline:' ${CONFIG_FILE} | awk '{print $2}' | sed 's/\"//g'`
+if grep -q 'pipeline:' "${CONFIG_FILE}"; then
+  PIPELINE_DIR=$(grep 'pipeline:' "${CONFIG_FILE}" | awk '{print $2}' | sed 's/\"//g')
 else
-  PIPELINE_DIR=`dirname $0`
+  PIPELINE_DIR=$(dirname "${0}")
 fi
 PIPELINE_DIR=${PIPELINE_DIR%/}
 
@@ -39,11 +38,9 @@ echo "Configuration: ${CONFIG_FILE}"
 echo "Verbose: ${VERBOSE}"
 echo "Pipeline: ${PIPELINE_DIR}"
 
-Rscript ${PIPELINE_DIR}/demultiplexing_cells.R -y ${CONFIG_FILE} -v ${VERBOSE}
-if grep -q "aggregation:" ${CONFIG_FILE}; then
-  Rscript ${PIPELINE_DIR}/aggregate.R -y ${CONFIG_FILE} -v ${VERBOSE}
+Rscript "${PIPELINE_DIR}"/demultiplexing_cells.R -y "${CONFIG_FILE}" -v ${VERBOSE}
+if grep -q "aggregation:" "${CONFIG_FILE}"; then
+  Rscript "${PIPELINE_DIR}"/aggregate.R -y "${CONFIG_FILE}" -v ${VERBOSE}
 fi
 
-echo "Check outputs at: `grep "output_dir" ${CONFIG_FILE} | sed 's/.*: //; s/ #.*//'`"
-
-# shellcheck
+echo "Check outputs at: $(grep "output_dir" "${CONFIG_FILE}" | sed 's/.*: //; s/ #.*//')"
