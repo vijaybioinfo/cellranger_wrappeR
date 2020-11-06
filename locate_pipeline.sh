@@ -3,8 +3,8 @@
 if [[ ! -s .config.yaml ]]; then cp config.yaml .config.yaml; fi
 cd "$(dirname "${0}")" || exit
 
-TOOL_NAME=cellranger_wrappeR
-PIPELINE_DIR=$(pwd -P)
+TOOL_NAME="$(basename "$(dirname "${0}")")" # extracting folder name
+PIPELINE_DIR="$(pwd -P)"
 
 echo "Pipeline: ${PIPELINE_DIR}"
 sed -i 's|\./|'"${PIPELINE_DIR}"'/|g' config.yaml
