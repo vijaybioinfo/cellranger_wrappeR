@@ -33,7 +33,7 @@ cd cellranger_wrappeR
 Make sure your config template is pointing to where you have the pipeline.
 This will also add the run.sh script as an alias.
 ```
-sh locate_pipeline.sh
+sh ./locate_pipeline.sh
 ```
 
 ### Run the pipeline
