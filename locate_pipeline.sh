@@ -1,13 +1,15 @@
 #!/bin/bash
 
-if [[ ! -s .config.yaml ]]; then cp config.yaml .config.yaml; fi
 cd "$(dirname "${0}")" || exit
 
-TOOL_NAME="$(basename "$(dirname "${0}")")" # extracting folder name
-PIPELINE_DIR="$(pwd -P)"
+if [[ ! -s .config.yaml ]]; then cp config.yaml .config.yaml; fi
 
+PIPELINE_DIR="$(pwd -P)"
+TOOL_NAME="$(basename "${PIPELINE_DIR}")" # extracting folder name
+
+echo "Name: ${TOOL_NAME}"
 echo "Pipeline: ${PIPELINE_DIR}"
-sed -i 's|\./|'"${PIPELINE_DIR}"'/|g' config.yaml
+sed 's|\./|'"${PIPELINE_DIR}"'/|g' .config.yaml > config.yaml
 
 if ! grep -q "${TOOL_NAME}" ~/.bash_alias; then
   echo "Adding alias"
