@@ -22,6 +22,7 @@ Also, _once you bcl2fastq you never mkfastq again_.
 	- **Gex**: to use Cell Ranger's "count" routine.
 	- **TCR**: to use Cell Ranger's "vdj" routine.
 	- **CITE**: to use Cell Ranger's "count" routine and identify it as Feature Barcode.
+3. We assume we have a scratch folder with /mnt/beegfs as its path. However, you can change that in routine_template.sh (WORKDIR=).
 
 ### Install
 Clone this repository (your ~/bin folder is a good place).
