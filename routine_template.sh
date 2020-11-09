@@ -110,6 +110,8 @@ stageout()
  echo Writing files in permanent directory  ${PROJDIR}
  cd ${WORKDIR}
 
+ # {extra_actions}
+
  cp -R ./* ${PROJDIR}/
 
  echo Final files in permanent data directory:
