@@ -41,4 +41,5 @@ sh ./locate_pipeline.sh
 After you've added the necessary information to the YAML file you can call the pipeline.
 ```
 cellranger_wrappeR -y /path/to/project/config.yaml
+cellranger_wrappeR -y /path/to/project/config.yaml -s # to just run the summary
 ```
