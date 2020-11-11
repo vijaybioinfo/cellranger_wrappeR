@@ -4,6 +4,7 @@
 
 library(optparse)
 library(yaml)
+library(crayon)
 
 optlist <- list(
   make_option(
