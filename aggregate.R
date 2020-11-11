@@ -47,8 +47,9 @@ username <- system("echo ${USER}", intern = TRUE)
 
 setwd(config_file$output_dir)
 if(defargs$verbose){
-  cat("\n************ Vijay Lab - LJI 2020\n")
-  cat("------------ Aggregations\n")
+  cat(cyan("\n************ Vijay Lab - LJI\n"))
+  cat(cyan("-------------------------------------\n"))
+  cat(red$bold("------------ Aggregations\n"))
   str(config_file[!names(config_file) %in% "job"])
   cat("Working at:", getwd(), "\n")
   system("ls -loh")

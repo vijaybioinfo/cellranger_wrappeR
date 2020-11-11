@@ -9,6 +9,8 @@
 
 options(warn = -1, stringsAsFactors = FALSE)
 library(optparse)
+library(crayon)
+library(ggplot2)
 
 optlist <- list(
   make_option(
@@ -27,9 +29,10 @@ opt <- parse_args(optparse)
 # opt$input = "/home/ciro/large/fungal_allergy/raw/NV035/count"
 
 # Functions #
-cat("-------------------------------------\n")
-cat("Summarising Cell Ranger results\n")
-library(ggplot2)
+cat(cyan("\n*** Vijay Lab - LJI\n"))
+cat(cyan("-------------------------------------\n"))
+cat(red$bold("Summarising Cell Ranger results\n"))
+
 plot_qcs_bars <- function(df){
   p <- ggplot(df, aes(x = Library, y = value)) +
     geom_bar(stat = "identity") + facet_wrap(~ variable, scale = "free") +
