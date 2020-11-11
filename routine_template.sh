@@ -81,6 +81,7 @@ stagein()
   mkdir --parents ${PROJDIR}
   echo Writing files in node directory ${WORKDIR}
   cd ${WORKDIR}
+  cp ${PROJDIR}/* ./
 
   echo Files in node work directory are as follows:
   ls -loh
