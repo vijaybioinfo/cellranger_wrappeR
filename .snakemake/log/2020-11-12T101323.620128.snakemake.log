@@ -1,0 +1,3 @@
+KeyError in line 22 of /home/ciro/scripts/clustering/Snakefile:
+'variable_features'
+  File "/home/ciro/scripts/clustering/Snakefile", line 22, in <module>

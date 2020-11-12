@@ -86,7 +86,7 @@ stagein()
   # {after_copy} 
 
   echo Files in node work directory are as follows:
-  ls -loh
+  ls -loha
 }
 
 ######################################################################
@@ -121,7 +121,7 @@ stageout()
 
  echo Final files in permanent data directory:
  cd ${PROJDIR}
- ls -loh
+ ls -loha
 }
 
 ######################################################################
@@ -158,8 +158,8 @@ trap 'early; stageout' 2 9 15
 statecopy()
 {
   # Check if everything went well
-  WCONTENT=(`ls ${WORKDIR}`)
-  PCONTENT=(`ls ${PROJDIR}`)
+  WCONTENT=(`ls -a ${WORKDIR}`)
+  PCONTENT=(`ls -a ${PROJDIR}`)
   declare -p ALL_TRANSFERRED=()
   for i in "${WCONTENT[@]}"; do
       skip=
