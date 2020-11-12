@@ -83,6 +83,8 @@ stagein()
   cd ${WORKDIR}
   cp ${PROJDIR}/* ./
 
+  # {after_copy} 
+
   echo Files in node work directory are as follows:
   ls -loh
 }
@@ -95,7 +97,9 @@ stagein()
 
 runprogram()
 {
+  # {pre_routine}
   {routine_params}
+  # {post_routine} 
 }
 
 ######################################################################
