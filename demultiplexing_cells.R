@@ -174,7 +174,7 @@ for(my_sample in samples){
     job_parm <- if(routine_pbs_fname %in% names(job_parm)) job_parm[[routine_pbs_fname]] else job_parm[[1]]
     pbs <- gsub(paste0("\\{", i, "\\}"), job_parm, pbs)
   }
-  pbs <- gsub("\\{extra_actions\\}", "rm -r SC_*_CS", pbs)
+  pbs <- gsub("# \\{extra_actions\\}", "rm -r SC_*_CS", pbs)
 
   running <- try(running_jobs(), silent = TRUE)
   if(class(running) == "try-error") running <- list(Name = "none", id = "X124")
