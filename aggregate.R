@@ -3,8 +3,6 @@
 # Example: /home/ciro/scripts/cellranger/config_project.yaml
 
 library(optparse)
-library(yaml)
-library(crayon)
 
 optlist <- list(
   make_option(
@@ -23,9 +21,11 @@ optlist <- list(
 optparse <- OptionParser(option_list = optlist)
 defargs <- parse_args(optparse)
 
-# defargs$yaml <- "/home/ciro/covid19/scripts/cellranger_config_NV037.yaml"
-
 ## Functions ## ----------------------------------------------------------------
+suppressPackageStartupMessages({
+  library(yaml)
+  library(crayon)
+})
 dirnamen <- function(x, n = 1){
   for(i in 1:n) x <- dirname(x)
   return(x)
@@ -44,7 +44,6 @@ running_jobs <- function(){
 
 ## Reading files ## ------------------------------------------------------------
 config_file = read_yaml(defargs$yaml)
-username <- system("echo ${USER}", intern = TRUE)
 
 setwd(config_file$output_dir)
 if(defargs$verbose){
@@ -68,9 +67,11 @@ template_pbs <- readLines(con = template_pbs_con)
 close(template_pbs_con)
 
 # Getting samples
-# all_samples <- list.files(path = 'count', full.name = TRUE)
 all_samples <- gsub("count_", "count/", list.files(path = 'scripts', pattern = "count.*sh$"))
-all_samples <- gsub(".sh", "", all_samples)
+all_samples <- unique(c(
+  list.files(path = 'count', pattern = "Gex", full.name = TRUE),
+  gsub(pattern = "\\.sh", replacement = "", x = all_samples)
+))
 samples <- paste0(getwd(), "/", all_samples, "/outs/molecule_info.h5")
 # samples <- samples[file.exists(samples)]
 # samples <- samples[grepl(paste0(rownames(aggr_df), collapse = "|"), samples)]
@@ -88,9 +89,9 @@ for(my_aggregation in aggregations){
   }
 
   # Getting name(s)
-  sample_patterns <- paste0(rownames(aggr_df[which(aggr_df[, my_aggregation] == 1), ]), "$")
-  sample_patterns <- paste0(sample_patterns, collapse = "|")
-  selected_samples <- samples[grepl(sample_patterns, names(samples))]
+  samples_pattern <- paste0(rownames(aggr_df[which(aggr_df[, my_aggregation] == 1), ]), "$")
+  samples_pattern <- paste0(samples_pattern, collapse = "|")
+  selected_samples <- samples[grepl(samples_pattern, names(samples))]
   if(defargs$verbose) cat("\n +", length(selected_samples), "samples\n")
 
   # Determining routine type
@@ -118,7 +119,7 @@ for(my_aggregation in aggregations){
   output_dir <- paste0(getwd(), "/", routine)
   if(!dir.exists(output_dir)) dir.create(output_dir)
 
-  pbs <- gsub("\\{username\\}", username, template_pbs)
+  pbs <- gsub("\\{username\\}", Sys.info()[["user"]], template_pbs)
   pbs <- gsub("\\{sampleid\\}", aggregation_name, pbs)
   pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
   pbs <- gsub("\\{outpath\\}", output_dir, pbs)
@@ -139,11 +140,11 @@ for(my_aggregation in aggregations){
   writeLines(text = pbs, con = pbs_file)
   if(any(c(config_file$job$submit, defargs$submit))){
     depend <- if(isTRUE(config_file$job$depend %in% running$id)) paste0("-W depend=afterok:", config_file$job$depend)
-    depend_routine <- paste0(c(depend, running[grepl(sample_patterns, running$Name), ]$id), collapse = ":")
+    depend_routine <- paste0(c(depend, running[grepl(samples_pattern, running$Name), ]$id), collapse = ":")
     if(is.null(depend) && depend_routine != "") depend_routine <- paste0("-W depend=afterok:", depend_routine)
     pbs_command <- paste("qsub", depend_routine, pbs_file)
-    if(defargs$verbose) cat("\n", pbs_command); system(pbs_command)
-    try(file.remove(gsub("sh", "out.txt", pbs_file)), silent = TRUE)
+    if(defargs$verbose) cat("\n", pbs_command, "\n"); system(pbs_command)
+    void <- suppressWarnings(file.remove(gsub("sh", "out.txt", pbs_file)))
   }
   if(defargs$verbose) cat("\n")
 }

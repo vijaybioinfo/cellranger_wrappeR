@@ -17,6 +17,14 @@ optlist <- list(
     help = "Folder with Cell Ranger's count/vdj outputs."
   ),
   make_option(
+    opt_str = c("-p", "--pattern"), type = "character",
+    help = "Pattern for libraries to summarise."
+  ),
+  make_option(
+    opt_str = c("-e", "--exclude"), type = "character",
+    help = "Pattern for libraries to exclude."
+  ),
+  make_option(
     opt_str = c("-o", "--outdir"), type = "character",
     help = "Out put directory."
   )
@@ -24,19 +32,19 @@ optlist <- list(
 optparse <- OptionParser(option_list = optlist)
 opt <- parse_args(optparse)
 
-# opt$input = "/home/ciro/large/covid19/raw/NV029/COUNTS"
-# opt$input = "/home/ciro/large/fungal_allergy/raw/NV035/count"
-
 # Functions #
 cat(cyan("\n*** Vijay Lab - LJI\n"))
 cat(cyan("-------------------------------------\n"))
 cat(red$bold("Summarising Cell Ranger results\n"))
-suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(cowplot)
+}); theme_set(theme_bw())
 plot_qcs_bars <- function(df){
   p <- ggplot(df, aes(x = Library, y = value)) +
-    geom_bar(stat = "identity") + facet_wrap(~ variable, scale = "free") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  # if(diff(range(df$value)) > 1e4) p <- p + scale_y_log10()
+    geom_bar(stat = "identity") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_text(aes(label=value), vjust=-0.3)
   p
 }
 getarg <- function(x, pattern){
@@ -66,10 +74,10 @@ this_order <- function(x, ref){
 finished_file <- function(x, size = 3620){ file.exists(x) && isTRUE(file.size(x) > size) }
 hierarchy <- c("Single Cell 5' PE", "Single Cell 3' v3", "Single Cell 3' v2 or 5'", "Single Cell V(D)J")
 
-if(grepl(" ", opt$input)){
+if(grepl(" |\\n", opt$input)){
   cat("Several locations\n")
-  opt$input <- unlist(strsplit(opt$input, " "))
-}
+  opt$input <- unlist(strsplit(opt$input, " |\\n"))
+}; opt$input <- unique(opt$input)
 
 cat("Path(s):\n", paste0(opt$input, collapse = "\n"), "\n", sep = "")
 if(all(file.exists(opt$input))){
@@ -82,6 +90,8 @@ if(all(file.exists(opt$input))){
     }
   }))
   libs <- libs[file.exists(paste0(libs, '/outs/metrics_summary.csv'))]
+  if(!is.null(opt$pattern)) libs <- libs[grepl(opt$pattern, libs)]
+  if(!is.null(opt$exclude)) libs <- libs[!grepl(opt$exclude, libs)]
   sumtabf <- if(is.null(opt$outdir)) paste0(tail(dirname(libs[dir.exists(libs)]), 1), '/') else opt$outdir
   cat("Summary output at:", sumtabf, "\n")
   cat("Binding", length(libs), "metrics\n")
@@ -105,7 +115,7 @@ if(all(file.exists(opt$input))){
   if(all(sapply(lchems, length) == 1)) lchems <- list(unique(chems))
   for(chem in lchems){
     chname <- if(length(chem) ==1) gsub("\\(|\\)| |\\'", "", chem) else "all"
-    sumtabft <- paste0(sumtabf, "a1_", chname, "_libraries_summary.csv")
+    sumtabft <- paste0(sumtabf, "", chname, "_libraries_summary.csv")
     cat(" -", basename(sumtabft), "\n")
     sumtab <- data.frame(data.table::rbindlist(metsums[chems %in% chem], fill = TRUE), check.names = FALSE)
     cnames <- if(hierarchy[1] %in% chem) colnames(metsums[[which(chems %in% hierarchy[1])[1]]]) else colnames(sumtab)
@@ -164,7 +174,7 @@ if(all(file.exists(opt$input))){
         tvar <- lapply(cplotting, function(x){
           cat(x); mytab2plot <- sumtab2plot[sumtab2plot$variable == x, ]
           if(all(is.na(mytab2plot[, "value"]))){ cat("\n"); return(NULL) }else{ cat(" - p\n") }
-          try(print(plot_qcs_bars(mytab2plot)), silent = TRUE)
+          try(print(plot_qcs_bars(mytab2plot) + labs(x = NULL, y = NULL, subtitle = x)), silent = TRUE)
         })
         graphics.off(); cat("\n")
       }

@@ -21,7 +21,7 @@ while getopts ":y:vsh" opt; do
   case ${opt} in
     y) CONFIG_FILE=${OPTARG};;
     v) VERBOSE=TRUE;;
-    s) SUMMARY=${OPTARG:-TRUE};;
+    s) SUMMARY=TRUE;;
     h) usage; exit 1;;
     \?) echo "No -${OPTARG} argument found."; usage; exit 1;;
   esac
@@ -35,6 +35,9 @@ if grep -q 'pipeline:' "${CONFIG_FILE}"; then
 else
   PIPELINE_DIR=$(dirname "${0}")
 fi
+if [[ ! -s "${PIPELINE_DIR}/demultiplexing_cells.R" ]]; then
+  PIPELINE_DIR=$(dirname "${0}")
+fi
 PIPELINE_DIR=${PIPELINE_DIR%/}
 
 echo "Configuration: ${CONFIG_FILE}"
@@ -43,9 +46,10 @@ echo "Pipeline: ${PIPELINE_DIR}"
 
 if [[ "${SUMMARY}" != "TRUE" ]]; then
   Rscript "${PIPELINE_DIR}"/demultiplexing_cells.R -y "${CONFIG_FILE}" -v ${VERBOSE}
-  if grep -q "aggregation:" "${CONFIG_FILE}"; then
+  if grep -qE "^aggregation:" "${CONFIG_FILE}"; then
     Rscript "${PIPELINE_DIR}"/aggregate.R -y "${CONFIG_FILE}" -v ${VERBOSE}
   fi
+  exit
 fi
 
 OUTPUT_DIR=$(grep 'output_dir:' "${CONFIG_FILE}" | awk '{print $2}' | sed 's/\"//g')

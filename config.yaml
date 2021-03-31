@@ -6,7 +6,7 @@ fastqs_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV035"
 output_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/raw/NV035" # created if it doesn't exists
 samples: "FgAl06" # sample sheet or a pattern to select samples from 'fastqs_dir'
 transcriptome: # Cell Ranger reference
-  count: "/mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0"
+  count: /mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0
   vdj: /mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-vdj-GRCh38-alts-ensembl-2.0.0
 # You can give a sheet per sample or add a column 'library_pattern' with patterns
 # that can be found in the libraries' names where you used the set of barcodes

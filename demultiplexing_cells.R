@@ -19,7 +19,7 @@ optlist <- list(
   )
 )
 optparse <- OptionParser(option_list = optlist)
-defargs <- parse_args(optparse)
+opt <- parse_args(optparse)
 
 ## Functions ## ----------------------------------------------------------------
 dirnamen <- function(x, n = 1){
@@ -39,14 +39,12 @@ running_jobs <- function(){
 }
 
 ## Reading files ## ------------------------------------------------------------
-config_file = read_yaml(defargs$yaml)
-username <- system("echo ${USER}", intern = TRUE)
+config_file = read_yaml(opt$yaml)
 
 dir.create(config_file$output_dir, showWarnings = FALSE)
 setwd(config_file$output_dir)
 dir.create("scripts", showWarnings = FALSE)
-if(defargs$verbose){
-  cat(cyan("\n************ Vijay Lab - LJI\n"))
+if(opt$verbose){
   cat(cyan("-------------------------------------\n"))
   cat(red$bold("------------ Demultiplexing cells\n"))
   cat("Configuration:")
@@ -54,17 +52,17 @@ if(defargs$verbose){
   cat("Working at:", getwd(), "\n")
   system("ls -loh")
   cat("\n")
-}#; quit()
+}
 
-if(defargs$verbose) cat("Getting job template\n")
+if(opt$verbose) cat("Getting job template\n")
 template_pbs_con <- file(description = config_file$job$template, open = "r")
 template_pbs <- readLines(con = template_pbs_con)
 close(template_pbs_con)
 
 # Get sample sheet
-if(defargs$verbose) cat("Samples from: ")
+if(opt$verbose) cat("Samples from: ")
 sample_patterns <- if(file.exists(config_file$samples)){
-  if(defargs$verbose) cat("sheet\n")
+  if(opt$verbose) cat("sheet\n")
   sshet <- read.csv(config_file$samples, stringsAsFactors = FALSE)
   data_begin <- which(apply(X = sshet, MARGIN = 1, FUN = function(x) any(grepl("\\[Data", x)) ))
   if(length(data_begin) > 0) colnames(sshet) <- sshet[data_begin + 1, ]
@@ -72,38 +70,51 @@ sample_patterns <- if(file.exists(config_file$samples)){
   if(length(data_begin) > 0) samples <- samples[-c(1:data_begin)]
   paste0(samples, collapse = "|")
 }else{
-  if(defargs$verbose) cat("pattern\n")
+  if(opt$verbose) cat("pattern\n")
   config_file$samples
 }
 
 # Setting FASTQ directory
-fastqs_dir <- if(!is.null(config_file$fastqs_dir)) config_file$fastqs_dir else "./"
+fastqs_dir <- if(!is.null(config_file$fastqs_dir)) unlist(config_file$fastqs_dir) else "./"
 fastqs_dir <- gsub(",", " ", fastqs_dir)
 
 # Getting samples
 command <- paste("find", fastqs_dir, "-maxdepth 3 -name *fastq*")
-if(defargs$verbose) cat(command, "\n")
-all_samples <- system(command, intern = TRUE)
+if(opt$verbose) cat(command, sep = "\n")
+# all_samples <- system(command, intern = TRUE)
+all_samples <- unlist(sapply(command, function(x) system(x, intern = TRUE) ), use.names = FALSE)
 all_samples <- all_samples[!grepl("Undetermined_", all_samples)]
+if(!is.null(config_file$exclude)) all_samples <- all_samples[!grepl(config_file$exclude[[1]], all_samples)]
 all_samples <- samples <- grep(sample_patterns, all_samples, value = TRUE)
 for(lib_type in c("TCR", "CITE", "Gex")){
-  samples <- gsub(paste0("(.*", lib_type, ").*"), "\\1", basename(samples))
+  samples <- gsub(
+    pattern = paste0("(.*", lib_type, ").*"),
+    replacement = "\\1",
+    # ignore.case = TRUE, # this shouldn't be necessary
+    x = basename(samples)
+  )
 }
 samples <- unique(samples)
 
-if(defargs$verbose) cat("Processing", length(samples), "samples\n\n")
-if(defargs$verbose) cat("--------------------------------------\n")
+if(opt$verbose) cat("Processing", length(samples), "samples\n\n")
+# if(opt$verbose && length(samples) < 200) cat(all_samples, sep = "\n")
+if(opt$verbose) cat("--------------------------------------\n")
 for(my_sample in samples){
-  if(defargs$verbose) cat(my_sample)
+  if(opt$verbose) cat(my_sample)
   if(any(dir.exists(paste0(getwd(), "/", c("count", "vdj"),"/", my_sample, "/outs")))){
-    if(defargs$verbose) cat(" - done\n"); next
+    if(opt$verbose) cat(green$bold(" - done\n")); next
   }
 
   # Getting fastqs location and name(s)
   selected_samples <- grep(my_sample, all_samples, value = TRUE)
   fastqs <- unique(dirnamen(selected_samples, 2)) # can it be just config_file$fastqs_dir?
   project_name <- unique(basename(dirnamen(selected_samples, 2)))
-  if(project_name %in% basename(fastqs_dir)) project_name <- unique(basename(dirname(selected_samples)))
+  if(any(project_name %in% basename(fastqs_dir))) project_name <- unique(basename(dirname(selected_samples)))
+  if(length(project_name) > 1){
+    # It takes all of them anyway? At least when prefix is the same and folders are _A,_B,_C or/and not
+    # grep fastq.gz ~/ad_hoc/fungal_allergy/raw/cellranger/count/001_FgAl03_FLU_H_8D_Gex/_finalstate | sed 's/.*: //g' | sort -u
+    cat("\nMore than one project name:", project_name, "\n")
+  }
   sample_path <- unique(dirname(selected_samples))
 
   # Determining routine type
@@ -133,12 +144,12 @@ for(my_sample in samples){
     if(!is.null(feature_ref_df$library_pattern)){
       mypatterns <- levels(feature_ref_df$library_pattern)
       is_mypattern <- sapply(mypatterns, function(x) grepl(x, my_sample) )
-      if(defargs$verbose) cat("\nFound pattern(s) in ref:", paste0(mypatterns[which(is_mypattern)], collapse = ", "))
+      if(opt$verbose) cat("\nFound pattern(s) in ref:", paste0(mypatterns[which(is_mypattern)], collapse = ", "))
       feature_ref_df <- feature_ref_df[feature_ref_df$library_pattern %in% mypatterns[which(is_mypattern)], ]
     }
     feature_ref <- gsub("libraries_", "feature_ref_", libraries_file)
     feature_ref_df <- feature_ref_df[, !colnames(feature_ref_df) %in% "library_pattern"]
-    if(defargs$verbose) cat("\nExtracting", nrow(feature_ref_df), "hashtags")
+    if(opt$verbose) cat("\nExtracting", nrow(feature_ref_df), "hashtags")
     write.table(feature_ref_df, file = feature_ref, quote = FALSE, row.names = FALSE, sep = ",")
   }
 
@@ -164,11 +175,20 @@ for(my_sample in samples){
   output_dir <- paste0(getwd(), "/", routine)
   if(!dir.exists(output_dir)) dir.create(output_dir)
 
-  pbs <- gsub("\\{username\\}", username, template_pbs)
+  pbs <- gsub("\\{username\\}", Sys.info()[["user"]], template_pbs)
   pbs <- gsub("\\{sampleid\\}", my_sample, pbs)
   pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
   pbs <- gsub("\\{outpath\\}", output_dir, pbs)
-  pbs <- gsub("\\{routine_params\\}", params, pbs)
+
+  # params = "/home/ciro/bin/cellranger-3.1.0/cellranger count --id=026_AdUp01_Hu_45P3N_5v20_8D_Gex --sample=026_AdUp01_Hu_45P3N_5v20_8D_Gex --project=AdUp01_Reseq --fastqs=/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV035,/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV043 --nosecondary --transcriptome=/mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0 --localcores=10 --localmem=70 --disable-ui"
+  params <- unlist(strsplit(params, "--")) # multiline
+  heads <- c(" ", rep("   --", length(params)-1)); tails <- c(rep("\\", length(params)-1), "")
+  params <- paste0(heads, params, tails)
+  pbs <- append(pbs, params[-1], after = grep("\\{routine_params\\}", pbs))
+  tvar <- grep("\\{routine_params\\}", pbs); pbs[tvar] <- params[1]
+  # pbs <- gsub("\\{routine_params\\}", params[1], pbs)
+  # print(pbs[(tvar-4):(tvar+length(params)+4)])
+
   for(i in names(config_file$job)){
     job_parm <- config_file$job[[i]]
     job_parm <- if(routine_pbs_fname %in% names(job_parm)) job_parm[[routine_pbs_fname]] else job_parm[[1]]
@@ -179,18 +199,20 @@ for(my_sample in samples){
   running <- try(running_jobs(), silent = TRUE)
   if(class(running) == "try-error") running <- list(Name = "none", id = "X124")
   if(any(grepl(paste0(routine_pbs_fname, "_", my_sample, "$"), running$Name))){
-    if(defargs$verbose) cat(" - running\n"); next
+    if(opt$verbose) cat(" - running\n"); next
   }
 
   pbs_file <- paste0(getwd(), "/scripts/", routine_pbs_fname, "_", my_sample, ".sh")
-  writeLines(text = pbs, con = pbs_file)
-  if(any(c(config_file$job$submit, defargs$submit))){
+  if(opt$verbose) cat(" - creating job file"); # Somehow it's slow
+  writeLines(text = pbs, con = pbs_file); # file(open = "w"); close() didn't help
+  # write(x = pbs, file = pbs_file)
+  if(any(c(config_file$job$submit, opt$submit))){
     depend <- if(isTRUE(config_file$job$depend %in% running$id)) paste0("-W depend=afterok:", config_file$job$depend)
     pbs_command <- paste("qsub", depend, pbs_file)
-    if(defargs$verbose) cat("\n", pbs_command); system(pbs_command)
-    try(file.remove(gsub("sh", "out.txt", pbs_file)), silent = TRUE)
+    if(opt$verbose) cat("\n", pbs_command, "\n"); system(pbs_command)
+    void <- suppressWarnings(file.remove(gsub("sh", "out.txt", pbs_file)))
   }
-  if(defargs$verbose) cat("\n")
+  if(opt$verbose) cat("\n")
 }
-if(defargs$verbose) cat("--------------------------------------\n")
-if(defargs$verbose) cat("PBS files at:", paste0(getwd(), "/scripts/"), "\n")
+if(opt$verbose) cat("--------------------------------------\n")
+if(opt$verbose) cat("PBS files at:", paste0(getwd(), "/scripts/"), "\n")
