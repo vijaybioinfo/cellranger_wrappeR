@@ -70,7 +70,8 @@ close(template_pbs_con)
 all_samples <- gsub("count_", "count/", list.files(path = 'scripts', pattern = "count.*sh$"))
 all_samples <- unique(c(
   list.files(path = 'count', pattern = "Gex", full.name = TRUE),
-  gsub(pattern = "\\.sh", replacement = "", x = all_samples)
+  gsub(pattern = "\\.sh", replacement = "", x = all_samples),
+  gsub("count_", "", grep("^count_", running_jobs()$Name, value = TRUE))
 ))
 samples <- paste0(getwd(), "/", all_samples, "/outs/molecule_info.h5")
 # samples <- samples[file.exists(samples)]
