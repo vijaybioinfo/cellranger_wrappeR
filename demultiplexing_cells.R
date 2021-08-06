@@ -196,16 +196,17 @@ for(my_sample in samples){
   }
   pbs <- gsub("# \\{extra_actions\\}", "rm -r SC_*_CS", pbs)
 
+  pbs_file <- paste0(getwd(), "/scripts/", routine_pbs_fname, "_", my_sample, ".sh")
+  if(opt$verbose) cat(" - creating job file"); # Somehow it's slow
+  writeLines(text = pbs, con = pbs_file); # file(open = "w"); close() didn't help
+  # write(x = pbs, file = pbs_file)
+  
   running <- try(running_jobs(), silent = TRUE)
   if(class(running) == "try-error") running <- list(Name = "none", id = "X124")
   if(any(grepl(paste0(routine_pbs_fname, "_", my_sample, "$"), running$Name))){
     if(opt$verbose) cat(" - running\n"); next
   }
 
-  pbs_file <- paste0(getwd(), "/scripts/", routine_pbs_fname, "_", my_sample, ".sh")
-  if(opt$verbose) cat(" - creating job file"); # Somehow it's slow
-  writeLines(text = pbs, con = pbs_file); # file(open = "w"); close() didn't help
-  # write(x = pbs, file = pbs_file)
   if(any(c(config_file$job$submit, opt$submit))){
     depend <- if(isTRUE(config_file$job$depend %in% running$id)) paste0("-W depend=afterok:", config_file$job$depend)
     pbs_command <- paste("qsub", depend, pbs_file)
