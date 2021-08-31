@@ -19,7 +19,7 @@ optlist <- list(
   )
 )
 optparse <- OptionParser(option_list = optlist)
-defargs <- parse_args(optparse)
+opt <- parse_args(optparse)
 
 ## Functions ## ----------------------------------------------------------------
 suppressPackageStartupMessages({
@@ -43,10 +43,10 @@ running_jobs <- function(){
 }
 
 ## Reading files ## ------------------------------------------------------------
-config_file = read_yaml(defargs$yaml)
+config_file = read_yaml(opt$yaml)
 
 setwd(config_file$output_dir)
-if(defargs$verbose){
+if(opt$verbose){
   cat(cyan("\n************ Vijay Lab - LJI\n"))
   cat(cyan("-------------------------------------\n"))
   cat(red$bold("------------ Aggregations\n"))
@@ -79,21 +79,22 @@ samples <- paste0(getwd(), "/", all_samples, "/outs/molecule_info.h5")
 names(samples) <- basename(dirnamen(samples, 2))
 samples <- samples[names(samples) %in% rownames(aggr_df)]
 
-if(defargs$verbose) cat("Processing", length(samples), "samples\n")
-if(defargs$verbose) cat("Aggregations", length(aggregations), "\n\n")
-if(defargs$verbose) cat("--------------------------------------\n")
+if(opt$verbose) cat("Processing", length(samples), "samples\n")
+if(opt$verbose) cat("Aggregations", length(aggregations), "\n\n")
+if(opt$verbose) cat("--------------------------------------\n")
 for(my_aggregation in aggregations){
   aggregation_name <- gsub("^aggr.", "", my_aggregation)
-  if(defargs$verbose) cat(aggregation_name)
-  if(dir.exists(paste0(getwd(), "/aggr/", aggregation_name, "/outs"))){
-    if(defargs$verbose) cat(" - done\n"); next
+  if(opt$verbose) cat(aggregation_name)
+  re_run <- isTRUE(any(grepl("^f$|force", c(config_file$job$submit, opt$submit))))
+  if(dir.exists(paste0(getwd(), "/aggr/", aggregation_name, "/outs")) && !re_run){
+    if(opt$verbose) cat(" - done\n"); next
   }
 
   # Getting name(s)
   samples_pattern <- paste0(rownames(aggr_df[which(aggr_df[, my_aggregation] == 1), ]), "$")
   samples_pattern <- paste0(samples_pattern, collapse = "|")
   selected_samples <- samples[grepl(samples_pattern, names(samples))]
-  if(defargs$verbose) cat("\n +", length(selected_samples), "samples\n")
+  if(opt$verbose) cat("\n +", length(selected_samples), "samples\n")
 
   # Determining routine type
   routine <- routine_pbs_fname <- "aggr"
@@ -133,21 +134,22 @@ for(my_aggregation in aggregations){
 
   running <- try(running_jobs(), silent = TRUE)
   if(class(running) == "try-error") running <- list(Name = "none")
-  if(any(grepl(paste0(routine_pbs_fname, "_", aggregation_name, "$"), running$Name))){
-    if(defargs$verbose) cat(" - running\n"); next
+  do_we_submit <- any(c(opt$submit, re_run))
+  if(any(grepl(paste0(routine_pbs_fname, "_", aggregation_name, "$"), running$Name)) && isFALSE(do_we_submit)){
+    if(opt$verbose) cat(" - running\n"); next
   }
 
   pbs_file <- paste0(getwd(), "/scripts/", routine_pbs_fname, "_", aggregation_name, ".sh")
   writeLines(text = pbs, con = pbs_file)
-  if(any(c(config_file$job$submit, defargs$submit))){
+  if(isTRUE(any(c(config_file$job$submit, do_we_submit)))){
     depend <- if(isTRUE(config_file$job$depend %in% running$id)) paste0("-W depend=afterok:", config_file$job$depend)
     depend_routine <- paste0(c(depend, running[grepl(samples_pattern, running$Name), ]$id), collapse = ":")
     if(is.null(depend) && depend_routine != "") depend_routine <- paste0("-W depend=afterok:", depend_routine)
     pbs_command <- paste("qsub", depend_routine, pbs_file)
-    if(defargs$verbose) cat("\n", pbs_command, "\n"); system(pbs_command)
+    if(opt$verbose) cat("\n", pbs_command, "\n"); system(pbs_command)
     void <- suppressWarnings(file.remove(gsub("sh", "out.txt", pbs_file)))
   }
-  if(defargs$verbose) cat("\n")
+  if(opt$verbose) cat("\n")
 }
-if(defargs$verbose) cat("--------------------------------------\n")
-if(defargs$verbose) cat("PBS files at:", paste0(getwd(), "/scripts/"), "\n")
+if(opt$verbose) cat("--------------------------------------\n")
+if(opt$verbose) cat("PBS files at:", paste0(getwd(), "/scripts/"), "\n")

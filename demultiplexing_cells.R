@@ -101,7 +101,8 @@ if(opt$verbose) cat("Processing", length(samples), "samples\n\n")
 if(opt$verbose) cat("--------------------------------------\n")
 for(my_sample in samples){
   if(opt$verbose) cat(my_sample)
-  if(any(dir.exists(paste0(getwd(), "/", c("count", "vdj"),"/", my_sample, "/outs")))){
+  re_run <- isTRUE(any(grepl("^f$|force", c(config_file$job$submit, opt$submit))))
+  if(any(dir.exists(paste0(getwd(), "/", c("count", "vdj"),"/", my_sample, "/outs"))) && !re_run){
     if(opt$verbose) cat(green$bold(" - done\n")); next
   }
 
@@ -180,7 +181,6 @@ for(my_sample in samples){
   pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
   pbs <- gsub("\\{outpath\\}", output_dir, pbs)
 
-  # params = "/home/ciro/bin/cellranger-3.1.0/cellranger count --id=026_AdUp01_Hu_45P3N_5v20_8D_Gex --sample=026_AdUp01_Hu_45P3N_5v20_8D_Gex --project=AdUp01_Reseq --fastqs=/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV035,/mnt/BioAdHoc/Groups/vd-vijay/cramirez/seqteam/raw/NV043 --nosecondary --transcriptome=/mnt/BioAdHoc/Groups/vd-vijay/references/refdata-cellranger-hg19-3.0.0 --localcores=10 --localmem=70 --disable-ui"
   params <- unlist(strsplit(params, "--")) # multiline
   heads <- c(" ", rep("   --", length(params)-1)); tails <- c(rep("\\", length(params)-1), "")
   params <- paste0(heads, params, tails)
@@ -196,18 +196,19 @@ for(my_sample in samples){
   }
   pbs <- gsub("# \\{extra_actions\\}", "rm -r SC_*_CS", pbs)
 
+  running <- try(running_jobs(), silent = TRUE)
+  do_we_submit <- any(c(opt$submit, re_run))
+  job_name <- paste0(routine_pbs_fname, "_", my_sample, "$")
+  if(any(grepl(job_name, running$Name)) && isFALSE(do_we_submit)){
+    if(opt$verbose) cat(" - running\n"); next
+  }
+
   pbs_file <- paste0(getwd(), "/scripts/", routine_pbs_fname, "_", my_sample, ".sh")
   if(opt$verbose) cat(" - creating job file"); # Somehow it's slow
   writeLines(text = pbs, con = pbs_file); # file(open = "w"); close() didn't help
   # write(x = pbs, file = pbs_file)
-  
-  running <- try(running_jobs(), silent = TRUE)
-  if(class(running) == "try-error") running <- list(Name = "none", id = "X124")
-  if(any(grepl(paste0(routine_pbs_fname, "_", my_sample, "$"), running$Name))){
-    if(opt$verbose) cat(" - running\n"); next
-  }
 
-  if(any(c(config_file$job$submit, opt$submit))){
+  if(isTRUE(any(c(config_file$job$submit, do_we_submit)))){
     depend <- if(isTRUE(config_file$job$depend %in% running$id)) paste0("-W depend=afterok:", config_file$job$depend)
     pbs_command <- paste("qsub", depend, pbs_file)
     if(opt$verbose) cat("\n", pbs_command, "\n"); system(pbs_command)
